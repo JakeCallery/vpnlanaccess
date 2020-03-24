@@ -2,6 +2,11 @@ import os
 import platform
 from subprocess import check_output
 
+DEBUG_MODE = os.getenv("VPN_LAN_ACCESS_DEBUG")
+
+if(DEBUG_MODE):
+	print("WARNING: Running in DEBUG_MODE")
+
 
 def main():
 
@@ -25,15 +30,19 @@ def main():
 	try:
 		net_sess_output = check_output("net session >nul 2>&1", shell=True)
 	except Exception as e:
-		print("ERROR: You do not appear to have administrator rights in this prompt.")
+		print("\nERROR: You do not appear to have administrator rights in this prompt.")
 		print("Please click on the Windows Start Button -> Type: cmd -> Right Click on Command Prompt -> Select \"Run As Administrator\"")
-		print("Then please re-run this utility from that prompt.")
-		exit(1)
+		print("Then please re-run this utility from that prompt.\n")
+		if DEBUG_MODE:
+			pass
+		else:
+			exit(1)
 
-	# Get active nics
+# Get active nics
 	output = check_output("ipconfig", shell=True)
 	ip_output = output.split(os.linesep)
 
+# Parse ipconfig and create interface objects
 	i = 0
 	while i < len(ip_output):
 		line = ip_output[i].strip()
@@ -41,26 +50,26 @@ def main():
 		if line.startswith("IPv4 Address") or line.startswith("IP Address"):
 			ip = line.split(" :")[1]
 			interface = {
-				"ip": str(ip),
-				"mask": str(str(ip_output[i+1]).split(" :")[1]),
-				"gateway": str(str(ip_output[i+2]).split(" :")[1])
+				"ip": str(ip).strip(),
+				"mask": str(str(ip_output[i+1]).split(" :")[1]).strip(),
+				"gateway": str(str(ip_output[i+2]).split(" :")[1]).strip()
 			}
 
 			interface_list.append(interface)
 			i = i + 2
 		i = i + 1
 
-	# ask user for local interface
+# ask user for local interface
 	if len(interface_list) < 1:
 		print("ERROR: Unable to find any active network interfaces.")
 		exit(1)
 
+	if len(interface_list) < 2:
+		print("\nWARNING: Only found one active network interface, please be sure you are already connected to the VPN before continuing!\b")
+
 	for i in range(len(interface_list)):
 		print(str(i+1) + ": " + interface_list[i]["ip"])
-
 	ip_selection = raw_input("Please enter the number of your local ip address from the list 1 - " + str(len(interface_list)) + ": ")
-	print ip_selection
-
 
 
 if __name__ == "__main__":
