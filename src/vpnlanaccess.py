@@ -39,27 +39,37 @@ def main():
 			exit(1)
 
 # Get active nics
-	output = check_output("ipconfig", shell=True)
+	output = check_output("ipconfig /all", shell=True)
 	ip_output = output.split(os.linesep)
 
 # Parse ipconfig and create interface objects
 	i = 0
 	while i < len(ip_output):
-		line = ip_output[i].strip()
+		i_line = ip_output[i].strip()
 
-		if line.startswith("IPv4 Address") or line.startswith("IP Address"):
-			ip = line.split(" :")[1]
-			interface = {
-				"ip": str(ip).strip(),
-				"mask": str(str(ip_output[i+1]).split(" :")[1]).strip(),
-				"gateway": str(str(ip_output[i+2]).split(" :")[1]).strip()
-			}
+		if i_line.startswith("Description"):
+			# Find IPV4 line
+			k = i
+			while k < len(ip_output):
+				k_line = str(ip_output[k]).strip()
+				if k_line.startswith("IPv4 Address") or k_line.startswith("IP Address"):
+					ip = k_line.split(" :")[1]
+					if ip.endswith("(Preferred)"):
+						ip = ip[:-11]
+					interface = {
+						"desc": str(i_line).strip().split(": ")[1],
+						"ip": str(ip).strip(),
+						"mask": str(str(ip_output[k+1]).split(" :")[1]).strip(),
+						"gateway": str(str(ip_output[k+2]).split(" :")[1]).strip()
+					}
 
-			interface_list.append(interface)
-			i = i + 2
+					interface_list.append(interface)
+					break
+				k = k+1
+				i = k
 		i = i + 1
 
-# ask user for local interface
+# Print list of interfaces for user
 	if len(interface_list) < 1:
 		print("ERROR: Unable to find any active network interfaces.")
 		exit(1)
@@ -68,8 +78,13 @@ def main():
 		print("\nWARNING: Only found one active network interface, please be sure you are already connected to the VPN before continuing!\b")
 
 	for i in range(len(interface_list)):
-		print(str(i+1) + ": " + interface_list[i]["ip"])
-	ip_selection = raw_input("Please enter the number of your local ip address from the list 1 - " + str(len(interface_list)) + ": ")
+
+		print(str(i+1) + ": " + interface_list[i]["desc"])
+		print(str(interface_list[i]["ip"]) + "\n")
+
+# Ask user to select local ip
+	ip_selection = raw_input("Please enter the number of your LOCAL (non-vpn) ip address from the list 1-" + str(len(interface_list)) + ": ")
+
 
 
 if __name__ == "__main__":
