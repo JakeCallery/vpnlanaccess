@@ -83,8 +83,47 @@ def main():
 		print(str(interface_list[i]["ip"]) + "\n")
 
 # Ask user to select local ip
-	ip_selection = raw_input("Please enter the number of your LOCAL (non-vpn) ip address from the list 1-" + str(len(interface_list)) + ": ")
+	ip_selection_input = raw_input("Please enter the number of your LOCAL (non-vpn) ip address from the list 1-" + str(len(interface_list)) + ": ")
 
+	valid_input_type = False
+	try:
+		int(ip_selection_input)
+		valid_input_type = True
+	except ValueError:
+		valid_input_type = False
+
+	if valid_input_type:
+		if 1 <= int(ip_selection_input) < len(interface_list):
+			# save off nic info
+			local_interface = interface_list[int(ip_selection_input)-1]
+			print local_interface
+
+			# only supporting 255.255.255.0 mask for now
+			if local_interface["mask"] == "255.255.255.0":
+				route_commands = []
+				octet_list = local_interface["ip"].split(".")
+				first_three = octet_list[0] + "." + octet_list[1] + "." + octet_list[2]
+
+				route_commands.append("route delete " + octet_list[0] + "." + octet_list[1] + "." + octet_list[2] + "." + "0")
+				route_commands.append("route delete " + octet_list[0] + "." + octet_list[1] + "." + octet_list[2] + "." + "255")
+				route_commands.append("route delete " + octet_list[0] + "." + octet_list[1] + "." + octet_list[2] + "." + "128")
+				route_commands.append("route change " + first_three + ".0" + \
+										" MASK " + local_interface["mask"] + \
+										" " + local_interface["gateway"] + \
+				                        " " + "METRIC 1")
+
+
+
+			else:
+				print("ERROR: This version of the app is currently only able to handle local ips with a netmask of 255.255.255.0")
+				print("To get an updated version of the app, make sure you are on the vpn, and run the following from the command line:")
+				print("route print > c:\\temp\\routes.txt")
+				print("Then email the c:\\temp\\routes.txt to jake.callery@ansys.com")
+
+
+	else:
+		print("ERROR: That does not seem like one of the options, valid inputs are integers between 1 and " + str(len(interface_list)))
+		exit(1)
 
 
 if __name__ == "__main__":
