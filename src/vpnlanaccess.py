@@ -66,7 +66,7 @@ def main():
 					interface_list.append(interface)
 					break
 				k = k+1
-				i = k
+			i = k
 		i = i + 1
 
 # Print list of interfaces for user
