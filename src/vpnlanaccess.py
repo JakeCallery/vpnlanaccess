@@ -59,16 +59,20 @@ def main():
                         ip = ip[:-11]
                     interface = {
                         "desc": str(i_line).strip().split(": ")[1],
+                        "mac": str(ip_output[i+1].split(": ")[1]),
                         "ip": str(ip).strip(),
                         "mask": str(str(ip_output[k + 1]).split(" :")[1]).strip(),
                         "gateway": str(str(ip_output[k + 4]).split(" :")[1]).strip()
                     }
 
+                    print interface
                     interface_list.append(interface)
                     break
                 k = k + 1
             i = k
         i = i + 1
+
+    # Parse route print to get interface index based on mac
 
     # Print list of interfaces for user
     if len(interface_list) < 1:
