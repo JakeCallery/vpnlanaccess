@@ -46,32 +46,36 @@ def main():
 
     # Parse ipconfig and create interface objects
     i = 0
+    interface = None
+    parsing_interface = False
     while i < len(ip_output):
         i_line = ip_output[i].strip()
 
         if i_line.startswith("Description"):
-            # Find IPV4 line
-            k = i
-            while k < len(ip_output):
-                k_line = str(ip_output[k]).strip()
-                if k_line.startswith("IPv4 Address") or k_line.startswith("IP Address"):
-                    ip = k_line.split(" :")[1]
-                    if ip.endswith("(Preferred)"):
-                        ip = ip[:-11]
-                    interface = {
-                        "desc": str(i_line).strip().split(": ")[1],
-                        "mac": str(ip_output[i+1].split(": ")[1]),
-                        "ip": str(ip).strip(),
-                        "mask": str(str(ip_output[k + 1]).split(" :")[1]).strip(),
-                        "gateway": str(str(ip_output[k + 4]).split(" :")[1]).strip()
-                    }
+            # Found new Interface
+            parsing_interface = True
+            interface = {"desc": str(i_line).strip().split(": ")[1]}
 
-                    print interface
-                    interface_list.append(interface)
-                    break
-                k = k + 1
-            i = k
-        i = i + 1
+        if parsing_interface:
+            if i_line.startswith("Physical Address"):
+                interface["mac"] = str(i_line).strip().split(": ")[1]
+
+            if i_line.startswith("IPv4 Address"):
+                ip = str(i_line).strip().split(": ")[1]
+                if ip.endswith("(Preferred)"):
+                    ip = ip[:-11]
+                interface["ip"] = ip
+
+            if i_line.startswith("Subnet Mask"):
+                interface["mask"] = str(i_line).strip().split(": ")[1]
+
+            if i_line.startswith("Default Gateway"):
+                interface["gateway"] = str(i_line).strip().split(": ")[1]
+
+            if i_line == "":
+                interface_list.append(interface)
+                parsing_interface = False
+        i = i+1
 
     # Last interface check
     if len(interface_list) < 1:
@@ -88,7 +92,7 @@ def main():
             while not route_lines[ilist_index].strip().startswith("=="):
                 ilist_line = route_lines[ilist_index].strip()
                 # match up mac address in interface list and store interface index
-                ilist_line = re.sub('\.+', '|', ilist_line)
+                ilist_line = re.sub(r'\.+', '|', ilist_line)
                 tokens = ilist_line.split('|')
                 if len(tokens) == 3:
                     idx = tokens[0]
@@ -96,9 +100,15 @@ def main():
                     for interface in interface_list:
                         if ilist_mac.upper() == interface["mac"]:
                             interface["idx"] = idx
-                            print interface
                             break
                 ilist_index = ilist_index + 1
+
+    #Remove non-active interfaces
+    for x in range(len(interface_list)-1, -1, -1):
+        if "ip" not in interface_list[x]:
+            interface_list.pop(x)
+
+    print interface_list
 
     # Print list of interfaces for user to choose from
     if len(interface_list) < 2:
@@ -106,6 +116,7 @@ def main():
             "\nWARNING: Only found one active network interface, please be sure you are already connected to the VPN "
             "before continuing!\b")
     print("\n\n")
+
     for i in range(len(interface_list)):
         print(str(i + 1) + ": " + interface_list[i]["desc"])
         print(str(interface_list[i]["ip"]) + "\n")
