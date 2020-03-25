@@ -1,6 +1,7 @@
 import os
 import platform
 import re
+from sys import exit
 from subprocess import check_output
 
 DEBUG_MODE = os.getenv("VPN_LAN_ACCESS_DEBUG")
