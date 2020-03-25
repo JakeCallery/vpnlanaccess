@@ -15,7 +15,7 @@ def main():
     print("Checking for supported Operating System...")
     platform_os = platform.system()
     platform_version = platform.version()
-    print("Operating system is: " + platform_os + " " + str(platform_version))
+    print("Operating system is: " + platform_os + " " + str(platform_version) + "\n")
 
     if platform_os != "Windows":
         print("ERROR: This script is meant for Windows 7 or Windows 10 ONLY.")
@@ -39,6 +39,7 @@ def main():
             pass
         else:
             exit(1)
+    print("User has Admin Rights\n")
 
     # Get nics from ipconfig
     output = check_output("ipconfig /all", shell=True)
@@ -108,15 +109,14 @@ def main():
         if "ip" not in interface_list[x]:
             interface_list.pop(x)
 
-    print interface_list
-
     # Print list of interfaces for user to choose from
     if len(interface_list) < 2:
         print(
             "\nWARNING: Only found one active network interface, please be sure you are already connected to the VPN "
             "before continuing!\b")
-    print("\n\n")
+    print("\n")
 
+    print("Please select from the following list of network interfaces:")
     for i in range(len(interface_list)):
         print(str(i + 1) + ": " + interface_list[i]["desc"])
         print(str(interface_list[i]["ip"]) + "\n")
@@ -135,7 +135,6 @@ def main():
         if 1 <= int(ip_selection_input) <= len(interface_list):
             # save off nic info
             local_interface = interface_list[int(ip_selection_input) - 1]
-            print local_interface
 
             # only supporting 255.255.255.0 mask for now
             if local_interface["mask"] == "255.255.255.0":
