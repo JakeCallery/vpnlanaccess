@@ -1,5 +1,6 @@
 import os
 import platform
+import re
 from subprocess import check_output
 
 DEBUG_MODE = os.getenv("VPN_LAN_ACCESS_DEBUG")
@@ -39,7 +40,7 @@ def main():
         else:
             exit(1)
 
-    # Get active nics
+    # Get nics from ipconfig
     output = check_output("ipconfig /all", shell=True)
     ip_output = output.split(os.linesep)
 
@@ -72,13 +73,34 @@ def main():
             i = k
         i = i + 1
 
-    # Parse route print to get interface index based on mac
-
-    # Print list of interfaces for user
+    # Last interface check
     if len(interface_list) < 1:
         print("ERROR: Unable to find any active network interfaces.")
         exit(1)
 
+    # Parse route print to get interface index based on mac
+    route_output = check_output("route print", shell=True)
+    route_lines = route_output.split(os.linesep)
+    for r in range(len(route_lines)):
+        route_line = route_lines[r].strip()
+        if route_line.startswith("Interface List"):
+            ilist_index = r + 1
+            while not route_lines[ilist_index].strip().startswith("=="):
+                ilist_line = route_lines[ilist_index].strip()
+                # match up mac address in interface list and store interface index
+                ilist_line = re.sub('\.+', '|', ilist_line)
+                tokens = ilist_line.split('|')
+                if len(tokens) == 3:
+                    idx = tokens[0]
+                    ilist_mac = tokens[1].strip().replace(" ", "-")
+                    for interface in interface_list:
+                        if ilist_mac.upper() == interface["mac"]:
+                            interface["idx"] = idx
+                            print interface
+                            break
+                ilist_index = ilist_index + 1
+
+    # Print list of interfaces for user to choose from
     if len(interface_list) < 2:
         print(
             "\nWARNING: Only found one active network interface, please be sure you are already connected to the VPN "
@@ -120,10 +142,12 @@ def main():
                 route_commands.append("route add " + first_three + ".0" +
                                       " MASK " + local_interface["mask"] +
                                       " " + local_interface["gateway"] +
+                                      " " + "IF " + local_interface["idx"] +
                                       " " + "METRIC 1")
                 route_commands.append("route change " + first_three + ".0" +
                                       " MASK " + local_interface["mask"] +
                                       " " + local_interface["gateway"] +
+                                      " " + "IF " + local_interface["idx"] +
                                       " " + "METRIC 1")
 
                 print("Proposed Route Changes:")
@@ -139,6 +163,9 @@ def main():
                             if not DEBUG_MODE:
                                 response = check_output(command, shell=True)
                                 print(response)
+                            else:
+                                print("Skipped running command because debug mode is set.")
+
                         except Exception as e:
                             print("ERROR: route command failed: " + e.message)
                 else:
