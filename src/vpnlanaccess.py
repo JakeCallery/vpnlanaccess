@@ -72,7 +72,9 @@ def main():
                 interface["mask"] = str(i_line).strip().split(": ")[1]
 
             if i_line.startswith("Default Gateway"):
-                interface["gateway"] = str(i_line).strip().split(": ")[1]
+                tokens = str(i_line).strip().split(": ")
+                if len(tokens) > 1:
+                    interface["gateway"] = tokens[1]
 
             if i_line == "":
                 interface_list.append(interface)
