@@ -1,16 +1,38 @@
 import os
 import platform
 import re
+import getopt
 from sys import exit
+from sys import argv
 from subprocess import check_output
 
 DEBUG_MODE = os.getenv("VPN_LAN_ACCESS_DEBUG")
 
-if (DEBUG_MODE):
+if DEBUG_MODE:
     print("WARNING: Running in DEBUG_MODE")
 
 
-def main():
+def main(argv):
+    batch_mode = False
+    nic_number = None
+
+    try:
+        opt_list, args = getopt.getopt(argv, 'n:')
+    except Exception as e:
+        print("ERROR: " + str(e))
+        exit(1)
+
+    for opt, val in opt_list:
+        if opt == "-n" and val is not None:
+            try:
+                int(val)
+                batch_mode = True
+                nic_number = val
+            except ValueError as e:
+                print("ERROR: Value for -n needs to be an integer that is the Network Interface that is NOT the VPN interface.  Please run without -n to get the list.")
+                exit(1)
+
+
     interface_list = []
 
     print("Checking for supported Operating System...")
@@ -125,8 +147,11 @@ def main():
         print(str(interface_list[i]["ip"]) + "\n")
 
     # Ask user to select local ip
-    ip_selection_input = raw_input(
-        "Please enter the number of your LOCAL (non-vpn) ip address from the list 1-" + str(len(interface_list)) + ": ")
+    if batch_mode:
+        ip_selection_input = nic_number
+    else:
+        ip_selection_input = raw_input(
+            "Please enter the number of your LOCAL (non-vpn) ip address from the list 1-" + str(len(interface_list)) + ": ")
 
     try:
         int(ip_selection_input)
@@ -167,7 +192,11 @@ def main():
                 for command in route_commands:
                     print(command)
 
-                run_commands_input = raw_input("Commit the changes(Y/N)?")
+                if batch_mode:
+                    run_commands_input = "y"
+                    print("Running In BATCH mode, using Network Interface Number: " + str(nic_number))
+                else:
+                    run_commands_input = raw_input("Commit the changes(Y/N)?")
 
                 if run_commands_input.lower() == "y":
                     for command in route_commands:
@@ -204,4 +233,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(argv[1:])

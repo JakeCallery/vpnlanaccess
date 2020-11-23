@@ -7,7 +7,7 @@
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="VPN_LAN_ACCESS_DEBUG" value="True" />
     </envs>
-    <option name="SDK_HOME" value="C:/Python27/python.exe" />
+    <option name="SDK_HOME" value="C:\Python27\python.exe" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -24,7 +24,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/vpnlanaccess.py" />
-    <option name="PARAMETERS" value="" />
+    <option name="PARAMETERS" value="-n 2" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />
